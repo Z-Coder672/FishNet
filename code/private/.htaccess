@@ -1,0 +1,12 @@
+# Deny all web access to this directory
+Order Deny,Allow
+Deny from all
+
+# Prevent directory listing
+Options -Indexes
+
+# Block access to all file types
+<FilesMatch ".*">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch> 
