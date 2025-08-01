@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FishNet - Interactive Text Evolution</title>
+    <link rel="icon" type="image/png" href="darkicon.png" id="favicon">
+    <script>
+        // Immediately set theme before page renders
+        const initialTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', initialTheme);
+        // Set initial favicon
+        const favicon = document.getElementById('favicon');
+        favicon.href = initialTheme === 'dark' ? 'darkicon.png' : 'lighticon.png';
+        
+        // Set the initial route for the SPA
+        window.initialRoute = 'evolve';
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .slider-group {
+            margin: 1rem 0;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .slider-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border-color);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .loading-section {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .about-section {
+            margin-bottom: 3rem;
+        }
+        
+        .about-section h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .about-section h3 {
+            color: var(--text-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .about-section p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .warning-box {
+            background: rgba(255, 183, 77, 0.1);
+            border: 1px solid var(--warning-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+        
+        .setup-steps {
+            counter-reset: step-counter;
+        }
+        
+        .setup-steps li {
+            counter-increment: step-counter;
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+        
+        .setup-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: var(--primary-color);
+            color: white;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="/" class="nav-brand">
+                <img src="darkicon.png" alt="FishNet" class="nav-logo dark-logo" id="nav-logo-dark">
+                <img src="lighticon.png" alt="FishNet" class="nav-logo light-logo" id="nav-logo-light">
+                FishNet
+            </a>
+            <div class="nav-links">
+                <div class="nav-links-group">
+                    <a href="#" class="nav-link" data-route="evolve">Evolve</a>
+                    <a href="#" class="nav-link" data-route="about">About</a>
+                </div>
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"/>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content-container">
+        <!-- Evolve Page Content -->
+        <div id="evolve-page" class="page-content" style="display: none;">
+            <main class="container">
+                <section class="hero">
+                    <h1>FishNet</h1>
+                    <p class="subtitle">Help us evolve poetry with AI, trained directly by humans. To start, just click on the text you find most interesting.</p>
+                </section>
+
+                <section class="evolution-section">
+                    <!-- Sequences Grid -->
+                    <div class="sequences-section">
+                        <h3>Text Sequences</h3>
+                        
+                        <!-- Loading Section -->
+                        <div id="loading" class="loading-section hidden">
+                            <div class="spinner"></div>
+                            <p>Initializing...</p>
+                            <button id="cancel-loading-button" class="secondary-button" style="margin-top: 0.5rem; padding: 0.5rem 1rem; display: none; margin-left: auto; margin-right: auto;">
+                                <i class="fas fa-times"></i>
+                                Cancel Loading
+                            </button>
+                        </div>
+                        
+                        <div id="sequences-grid" class="sequences-grid">
+                            <!-- Sequence cards will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Share Progress Section -->
+                    <div class="share-section">
+                        <div class="control-group">
+                            <h3>Do you notice something interesting in one of the sequences?</h3>
+                            <div class="button-group">
+                                <button id="wow-button" class="primary-button wow-button">
+                                    <i class="fas fa-star"></i>
+                                    I think I found something cool!
+                                </button>
+                            </div>
+                            <p class="help-text">Help progress our mission by uploading your current checkpoint to the <a href="https://github.com/Z-Coder672/FishNet/tree/main/checkpoints" target="_blank">FishNet checkpoint repository</a> on GitHub</p>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Section -->
+                    <div class="stats-section">
+                        <div class="stat-card">
+                            <div class="stat-value" id="evolutions-value">0</div>
+                            <div class="stat-label">Evolutions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="eps-value">0.0</div>
+                            <div class="stat-label">Evolutions/sec</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-value" id="population-size-value">9</div>
+                            <div class="stat-label">Population Size</div>
+                        </div>
+                    </div>
+
+                    <!-- Controls Section -->
+                    <div class="controls-section">
+                        <div class="control-group">
+                            <h3>Controls</h3>
+                            <div class="button-group">
+                                <button id="auto-button" class="primary-button">
+                                    <i class="fas fa-play"></i>
+                                    <span class="button-text">Start Auto-Evolution</span>
+                                </button>
+                                <button id="save-button" class="secondary-button">
+                                    <i class="fas fa-download"></i>
+                                    Save Checkpoint
+                                </button>
+                                <button id="load-button" class="secondary-button">
+                                    <i class="fas fa-upload"></i>
+                                    Load Checkpoint
+                                </button>
+                                <button id="reset-button" class="secondary-button">
+                                    <i class="fas fa-redo"></i>
+                                    Reset Population
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <h3>Evaluation Method</h3>
+                            <div class="radio-group">
+                                <div class="radio-item">
+                                    <input type="radio" id="gemma-checkbox" name="eval-method" value="gemma">
+                                    <label for="gemma-checkbox">Gemma3 1B (AI Selection)</label>
+                                </div>
+                                <div class="radio-item">
+                                    <input type="radio" id="english-checkbox" name="eval-method" value="english">
+                                    <label for="english-checkbox">English Scorer (Statistical Selection)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <h3>Advanced Settings</h3>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="frequency-adjustment-checkbox">
+                                <label for="frequency-adjustment-checkbox">Adjust Letter Frequencies to Match English</label>
+                            </div>
+                            <div class="slider-group">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <label for="learning-rate-slider" style="margin: 0;">Learning Rate: <span id="learning-rate-value">0.020</span></label>
+                                    <button id="reset-learning-rate-button" class="secondary-button" style="margin: 0;">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                                <input type="range" id="learning-rate-slider" min="0.005" max="0.2" step="0.005" value="0.02">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- About Page Content -->
+        <div id="about-page" class="page-content" style="display: none;">
+            <main class="container">
+                <section class="hero">
+                    <h1>About FishNet</h1>
+                    <p class="subtitle">Interactive text evolution using neural networks</p>
+                </section>
+
+                <div class="about-content">
+                    <div class="about-section">
+                        <h2>What is FishNet?</h2>
+                        <p>
+                            FishNet is an interactive application that uses Compositional Pattern-Producing Networks (CPPNs) 
+                            to generate and evolve text sequences. The system employs a population-based evolutionary algorithm 
+                            where neural networks compete and reproduce based on various evaluation criteria.
+                        </p>
+                        
+                        <h3>Key Features</h3>
+                        <ul class="feature-list">
+                            <li><strong>Multiple Evaluation Methods:</strong> Choose between AI-powered evaluation (Gemma3 1B) or statistical language scoring</li>
+                            <li><strong>Interactive Breeding:</strong> Click on sequences to manually select parents for breeding</li>
+                            <li><strong>Auto-Evolution:</strong> Let the system automatically evolve text using selected criteria</li>
+                            <li><strong>Checkpoint System:</strong> Save and load population states</li>
+                            <li><strong>Real-time Statistics:</strong> Monitor evolution progress and performance</li>
+                            <li><strong>Dynamic Mutation Rates:</strong> Different mutation strengths for different evaluation methods</li>
+                        </ul>
+                    </div>
+
+                    <div class="about-section">
+                        <h2>How It Works</h2>
+                        <h3>Evolution Process</h3>
+                        <p>
+                            The evolution follows a PicBreeder-inspired algorithm:
+                        </p>
+                        <ol>
+                            <li>Generate 8 text sequences using the current population</li>
+                            <li>Evaluate sequences using the selected method (Gemma3 1B, English scoring, or manual selection)</li>
+                            <li>Select the best sequence as the parent</li>
+                            <li>Delete all other networks and create 8 new networks by copying and mutating the parent</li>
+                            <li>Apply random mutations, based on the learning rate slider</li>
+                            <li>Repeat the process</li>
+                        </ol>
+                    </div>
+
+                    <div class="about-section">
+                        <h2>Evaluation Methods</h2>
+                        
+                        <h3>Gemma3 1B (Ollama API)</h3>
+                        <p>
+                            Uses the Gemma3 1B language model to evaluate text "interestingness". This method sends the 
+                            generated sequences to a local Ollama instance and asks the AI to choose the most interesting one.
+                        </p>
+                        
+                        <h3>English Scorer</h3>
+                        <p>
+                            Statistical evaluation based on English language characteristics with automatic revert logic:
+                        </p>
+                        <ul>
+                            <li><strong>Letter Frequency:</strong> How well the text matches English letter distributions</li>
+                            <li><strong>Bigram Analysis:</strong> Common two-letter combinations in English</li>
+                            <li><strong>Vocabulary Score:</strong> Presence of common English words</li>
+                            <li><strong>Structural Score:</strong> Sentence structure and punctuation patterns</li>
+                            <li><strong>Revert Logic:</strong> If all mutations are worse than the parent, automatically revert and create new mutations</li>
+                        </ul>
+                    </div>
+
+                    <div class="about-section">
+                        <h2>Setting Up Ollama</h2>
+                        
+                        <div class="warning-box">
+                            <h4>⚠️ Important</h4>
+                            <p>
+                                The Gemma3 1B evaluation method requires a local Ollama instance running on your machine. 
+                                Without Ollama, the system will fall back to English scoring.
+                            </p>
+                        </div>
+
+                        <h3>Installation Steps</h3>
+                        <ol class="setup-steps" style="list-style-type: none;">
+                            <li>
+                                <strong>Install Ollama:</strong>
+                                Visit <a href="https://ollama.com/download" target="_blank">ollama.com/download</a> to download the appropriate version for your system.
+                            </li>
+                            
+                            <li>
+                                <strong>Start Ollama service:</strong>
+                                <br>
+                                <br>Run:
+                                <div class="code-block">
+                                    ollama serve
+                                </div>
+                            </li>
+                            
+                            <li>
+                                <strong>Pull the Gemma3 1B model:</strong>
+                                <br>
+                                <br>Run:
+                                <div class="code-block">
+                                    ollama pull gemma3:1b
+                                </div>
+                            </li>
+                            
+                            <li>
+                                <strong>Test the installation:</strong>
+                                <br>
+                                <br>Run:
+                                <div class="code-block">
+                                    ollama run gemma3:1b "Hello, world!"
+                                </div>
+                            </li>
+                        </ol>
+
+                        <h2 style="margin-top: 2.8rem;">Using the Application</h2>
+                        <ol class="setup-steps" style="list-style-type: none;">
+                            
+                            <li>
+                                <strong>Open your browser:</strong>
+                                <br>
+                                <br>Visit:
+                                <br>
+                                <div class="code-block">
+                                    <a href="https://fishnet.zimmzimm.com" target="_blank">https://fishnet.zimmzimm.com</a>
+                                </div>
+                            </li>
+                            
+                            <li>
+                                <strong>Choose your evaluation method:</strong>
+                                <ul class="setup-steps" style="list-style-type: none; margin-top: 1.3rem;">
+                                    <li><strong>Gemma3 1B (Ollama API):</strong> For AI-powered evolution (requires Ollama setup)</li>
+                                    <li><strong>English Scorer:</strong> For statistical language quality evaluation</li>
+                                    <li><strong>Manual Selection:</strong> For interactive human-guided evolution</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="about-section">
+                        <h2>Technical Details</h2>                        
+                        <h3>Mutation Rate Strategy</h3>
+                        <p>
+                            The mutation rate is set to the value of the learning rate slider.
+                        </p>
+                        <h3>Neural Network Architecture</h3>
+                        <p>
+                            Each individual in the population is a CPPN (Compositional Pattern-Producing Network) with:
+                        </p>
+                        <ul>
+                            <li><strong>Input Layer:</strong> 32-dimensional position encoding</li>
+                            <li><strong>Hidden Layers:</strong> 6 layers with 128 neurons each</li>
+                            <li><strong>Output Layer:</strong> 64-dimensional vocabulary distribution</li>
+                            <li><strong>Activation:</strong> Tanh activation functions</li>
+                        </ul>
+                    </div>
+                    <div class="about-section">
+                        <h2>Troubleshooting</h2>
+                        <ol style="list-style-type: none;" class="setup-steps">
+                            <li><strong>Ollama/Gemma</strong>
+                            <ul style="list-style-type: none; margin-top: 1.3rem;" class="setup-steps">
+                                <li><strong>Model Not Found</strong> <br>Pull the model with <code>ollama pull gemma3:1b</code></li>
+                                <li><strong>Connection Failed</strong> <br>Ensure Ollama is running with <code>ollama serve</code></li>
+                                <li><strong>Slow Responses</strong><br>Ensure you have enough RAM to run the model (about 4GB absolute minimum for running Gemma3 1B plus FishNet, 8GB or more recommended). The first few API calls may be slow as the model loads into memory</li>
+                            </ul>
+                            </li>
+                            <li><strong>Evolution</strong>
+                            <ul style="list-style-type: none; margin-top: 1.3rem;" class="setup-steps">
+                                <li><strong>Slow Evolution</strong> <br>Ensure you have enough RAM to run the FishNet model (about 4GB absolute minimum for running Gemma3 1B plus FishNet, 8GB or more recommended). The first few API calls may be slow as the model loads into memory</li>
+                                <li><strong>There Are No Words</strong> <br>This is expected for now! If you find words, please click the "I think I found something cool!" button to upload your checkpoint to the <a href="https://github.com/Z-Coder672/FishNet/checkpoints" target="_blank">FishNet checkpoint repository</a> on GitHub. When you start the app, you'll see the best checkpoints from other users to branch from!</li>
+                            </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- Load the main JavaScript file -->
+    <script src="fishnet.js"></script>
+</body>
+</html>
