@@ -1,0 +1,31 @@
+# Minimal Site5 PHP Configuration
+# This file only includes essential PHP settings
+
+# Basic PHP handler
+AddType application/x-httpd-php .php
+
+# Simple routing for SPA
+RewriteEngine On
+
+# Don't rewrite existing files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Don't rewrite PHP files
+RewriteCond %{REQUEST_URI} !\.php$
+
+# Don't rewrite static assets
+RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
+
+# Route everything else to router.php
+RewriteRule ^(.*)$ router.php [QSA,L]
+
+# Basic CORS
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes 
