@@ -327,21 +327,37 @@ function validateContent($content) {
 }
 
 function getPersonalAccessToken() {
-    // Try environment variable first (for servers that support it)
+    // First try environment variables
     $token = getenv('GITHUB_PERSONAL_TOKEN');
     if (!$token) {
         $token = $_ENV['GITHUB_PERSONAL_TOKEN'] ?? null;
     }
     
-    // If not found in environment, try reading from secure file
+    // If not found in environment, try reading from file
     if (!$token) {
-        $tokenFile = __DIR__ . '/../private/github_token.txt';
+        $tokenFile = __DIR__ . '/private/github_token.txt';
+        error_log("Looking for token file at: " . $tokenFile);
         if (file_exists($tokenFile)) {
-            $token = trim(file_get_contents($tokenFile));
+            error_log("Token file exists, reading content...");
+            $tokenContent = file_get_contents($tokenFile);
+            error_log("Token file content length: " . strlen($tokenContent));
+            // Remove comments and whitespace
+            $lines = explode("\n", $tokenContent);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line && strpos($line, '#') !== 0) {
+                    $token = $line;
+                    error_log("Found token: " . substr($token, 0, 10) . "...");
+                    break;
+                }
+            }
+        } else {
+            error_log("Token file does not exist at: " . $tokenFile);
         }
     }
     
     if (!$token) {
+        error_log("No token found in environment or file");
         throw new Exception('GitHub Personal Access Token not found. Please set GITHUB_PERSONAL_TOKEN environment variable or create private/github_token.txt file.');
     }
     return $token;

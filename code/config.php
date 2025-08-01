@@ -12,5 +12,5 @@ $GITHUB_REPO = 'Z-Coder672/FishNet';
 // Personal Access Token will be read from environment variable GITHUB_PERSONAL_TOKEN
 
 // Optional: Set to false in production
-$DEBUG_MODE = true;
+$DEBUG_MODE = false;
 ?> 
